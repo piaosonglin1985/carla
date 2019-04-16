@@ -4,66 +4,70 @@
 # -- Set up environment --------------------------------------------------------
 # ==============================================================================
 
-command -v /usr/bin/clang++-6.0 >/dev/null 2>&1 || {
-  echo >&2 "clang 6.0 is required, but it's not installed.";
-  echo >&2 "make sure you build Unreal Engine with clang 6.0 too.";
-  exit 1;
-}
-
-export CC=/usr/bin/clang-6.0
-export CXX=/usr/bin/clang++-6.0
 
 source $(dirname "$0")/Environment.sh
 
 mkdir -p ${CARLA_BUILD_FOLDER}
 pushd ${CARLA_BUILD_FOLDER} >/dev/null
 
-# ==============================================================================
-# -- Get and compile libc++ ----------------------------------------------------
-# ==============================================================================
+export CC=/usr/bin/clang-3.9
+export CXX=/usr/bin/clang++-3.9
 
-LLVM_BASENAME=llvm-6.0-ex
+# command -v /usr/bin/clang++-6.0 >/dev/null 2>&1 || {
+#   echo >&2 "clang 6.0 is required, but it's not installed.";
+#   echo >&2 "make sure you build Unreal Engine with clang 6.0 too.";
+#   exit 1;
+# }
 
-LLVM_INCLUDE=${PWD}/${LLVM_BASENAME}-install/include/c++/v1
-LLVM_LIBPATH=${PWD}/${LLVM_BASENAME}-install/lib
+# export CC=/usr/bin/clang-6.0
+# export CXX=/usr/bin/clang++-6.0
 
-if [[ -d "${LLVM_BASENAME}-install" ]] ; then
-  log "${LLVM_BASENAME} already installed."
-else
-  rm -Rf ${LLVM_BASENAME}-source ${LLVM_BASENAME}-build
+# # ==============================================================================
+# # -- Get and compile libc++ ----------------------------------------------------
+# # ==============================================================================
 
-  log "Retrieving libc++."
+# LLVM_BASENAME=llvm-6.0-ex
 
-  git clone --depth=1 -b release_60  https://github.com/llvm-mirror/llvm.git ${LLVM_BASENAME}-source
-  git clone --depth=1 -b release_60  https://github.com/llvm-mirror/libcxx.git ${LLVM_BASENAME}-source/projects/libcxx
-  git clone --depth=1 -b release_60  https://github.com/llvm-mirror/libcxxabi.git ${LLVM_BASENAME}-source/projects/libcxxabi
+# LLVM_INCLUDE=${PWD}/${LLVM_BASENAME}-install/include/c++/v1
+# LLVM_LIBPATH=${PWD}/${LLVM_BASENAME}-install/lib
 
-  log "Compiling libc++."
+# if [[ -d "${LLVM_BASENAME}-install" ]] ; then
+#   log "${LLVM_BASENAME} already installed."
+# else
+#   rm -Rf ${LLVM_BASENAME}-source ${LLVM_BASENAME}-build
 
-  mkdir -p ${LLVM_BASENAME}-build
+#   log "Retrieving libc++."
 
-  pushd ${LLVM_BASENAME}-build >/dev/null
+#   git clone --depth=1 -b release_60  https://github.com/llvm-mirror/llvm.git ${LLVM_BASENAME}-source
+#   git clone --depth=1 -b release_60  https://github.com/llvm-mirror/libcxx.git ${LLVM_BASENAME}-source/projects/libcxx
+#   git clone --depth=1 -b release_60  https://github.com/llvm-mirror/libcxxabi.git ${LLVM_BASENAME}-source/projects/libcxxabi
 
-  cmake -G "Ninja" \
-      -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF \
-      -DLIBCXX_INSTALL_EXPERIMENTAL_LIBRARY=OFF \
-      -DLLVM_ENABLE_EH=OFF \
-      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="../${LLVM_BASENAME}-install" \
-      ../${LLVM_BASENAME}-source
+#   log "Compiling libc++."
 
-  ninja cxx
+#   mkdir -p ${LLVM_BASENAME}-build
 
-  ninja install-libcxx
+#   pushd ${LLVM_BASENAME}-build >/dev/null
 
-  ninja install-libcxxabi
+#   cmake -G "Ninja" \
+#       -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY=OFF \
+#       -DLIBCXX_INSTALL_EXPERIMENTAL_LIBRARY=OFF \
+#       -DLLVM_ENABLE_EH=OFF \
+#       -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="../${LLVM_BASENAME}-install" \
+#       ../${LLVM_BASENAME}-source
 
-  popd >/dev/null
+#   ninja cxx
 
-  rm -Rf ${LLVM_BASENAME}-source ${LLVM_BASENAME}-build
+#   ninja install-libcxx
 
-fi
+#   ninja install-libcxxabi
 
-unset LLVM_BASENAME
+#   popd >/dev/null
+
+#   rm -Rf ${LLVM_BASENAME}-source ${LLVM_BASENAME}-build
+
+# fi
+
+# unset LLVM_BASENAME
 
 # ==============================================================================
 # -- Get boost includes --------------------------------------------------------
@@ -184,7 +188,7 @@ else
   pushd ${RPCLIB_BASENAME}-libcxx-build >/dev/null
 
   cmake -G "Ninja" \
-      -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -DASIO_NO_EXCEPTIONS" \
+      -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -DASIO_NO_EXCEPTIONS" \
       -DCMAKE_INSTALL_PREFIX="../${RPCLIB_BASENAME}-libcxx-install" \
       ../${RPCLIB_BASENAME}-source
 
@@ -247,7 +251,7 @@ else
   pushd ${GTEST_BASENAME}-libcxx-build >/dev/null
 
   cmake -G "Ninja" \
-      -DCMAKE_CXX_FLAGS="-std=c++14 -stdlib=libc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -fno-exceptions" \
+      -DCMAKE_CXX_FLAGS="-std=c++14 -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -fno-exceptions" \
       -DCMAKE_INSTALL_PREFIX="../${GTEST_BASENAME}-libcxx-install" \
       ../${GTEST_BASENAME}-source
 
@@ -284,7 +288,7 @@ unset GTEST_BASENAME
 # -- Generate Version.h --------------------------------------------------------
 # ==============================================================================
 
-CARLA_VERSION=$(get_git_repository_version)
+CARLA_VERSION="0.9.5"
 
 log "CARLA version ${CARLA_VERSION}."
 
@@ -310,7 +314,7 @@ set(CMAKE_C_COMPILER ${CC})
 set(CMAKE_CXX_COMPILER ${CXX})
 
 set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=c++14 -pthread -fPIC" CACHE STRING "" FORCE)
-set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -Wall -Wextra" CACHE STRING "" FORCE)
 
 # @todo These flags need to be compatible with setup.py compilation.
 set(CMAKE_CXX_FLAGS_RELEASE_CLIENT "\${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -Wdate-time -D_FORTIFY_SOURCE=2 -g -fstack-protector-strong -Wformat -Werror=format-security -fPIC -std=c++14 -Wno-missing-braces -DBOOST_ERROR_CODE_HEADER_ONLY -DLIBCARLA_WITH_PYTHON_SUPPORT" CACHE STRING "" FORCE)
@@ -323,11 +327,11 @@ cp ${LIBSTDCPP_TOOLCHAIN_FILE}.gen ${LIBCPP_TOOLCHAIN_FILE}.gen
 
 cat >>${LIBCPP_TOOLCHAIN_FILE}.gen <<EOL
 
-set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -stdlib=libc++" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -I${LLVM_INCLUDE}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "" FORCE)
 set(CMAKE_CXX_LINK_FLAGS "\${CMAKE_CXX_LINK_FLAGS} -L${LLVM_LIBPATH}" CACHE STRING "" FORCE)
-set(CMAKE_CXX_LINK_FLAGS "\${CMAKE_CXX_LINK_FLAGS} -lc++ -lc++abi" CACHE STRING "" FORCE)
+set(CMAKE_CXX_LINK_FLAGS "\${CMAKE_CXX_LINK_FLAGS} -libstdc++" CACHE STRING "" FORCE)
 EOL
 
 # -- CMAKE_CONFIG_FILE ---------------------------------------------------------
